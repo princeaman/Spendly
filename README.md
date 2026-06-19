@@ -1,2 +1,0 @@
-# Spendly
-Expense Tracker WebApp
