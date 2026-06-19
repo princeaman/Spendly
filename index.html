@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Spendly – Modern expense tracker with analytics, insights and PDF export" />
+  <title>Spendly – Expense Tracker</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- jsPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════
+       SPLASH / LOADER
+  ════════════════════════════════════════════ -->
+  <div id="splash" class="splash">
+    <div class="splash-inner">
+      <div class="splash-logo">💸</div>
+      <div class="splash-brand">Spendly</div>
+      <div class="splash-sub">Smart Expense Tracker</div>
+      <div class="splash-bar"><div class="splash-bar-fill"></div></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       APP SHELL
+  ════════════════════════════════════════════ -->
+  <div id="app" class="app hidden">
+
+    <!-- SIDEBAR (desktop) -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">💸</div>
+        <div class="brand-text">Spend<span>ly</span></div>
+      </div>
+      <nav class="sidebar-nav">
+        <button class="sidebar-nav-item active" data-page="add">
+          <span class="snav-icon">➕</span>
+          <span class="snav-label">Add Expense</span>
+        </button>
+        <button class="sidebar-nav-item" data-page="analytics">
+          <span class="snav-icon">📊</span>
+          <span class="snav-label">Analytics</span>
+        </button>
+        <button class="sidebar-nav-item" data-page="dashboard">
+          <span class="snav-icon">🏠</span>
+          <span class="snav-label">Dashboard</span>
+        </button>
+        <button class="sidebar-nav-item" data-page="transactions">
+          <span class="snav-icon">📋</span>
+          <span class="snav-label">Transactions</span>
+        </button>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="sidebar-action-btn" id="sidebar-theme-btn">🌙 Toggle Theme</button>
+        <button class="sidebar-action-btn accent" id="sidebar-admin-btn">🔐 Admin Mode</button>
+        <button class="sidebar-action-btn green" id="sidebar-export-btn">📄 Export PDF</button>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content" id="main-content">
+
+      <!-- Mobile Header -->
+      <header class="mobile-header">
+        <div class="header-brand">
+          <div class="brand-icon-sm">💸</div>
+          <div class="brand-text-sm">Spend<span>ly</span></div>
+        </div>
+        <div class="header-actions">
+          <button class="hdr-btn" id="mobile-theme-btn" title="Toggle theme">🌙</button>
+          <button class="hdr-btn" id="mobile-admin-btn" title="Admin mode">🔐</button>
+          <button class="hdr-btn" id="mobile-export-btn" title="Export PDF">📄</button>
+        </div>
+      </header>
+
+      <!-- ─── PAGE: ADD EXPENSE ─── -->
+      <section class="page active" id="page-add">
+        <div class="page-header">
+          <h1 class="page-title">Add Expense <span class="title-emoji">✏️</span></h1>
+          <p class="page-sub">Track every rupee you spend</p>
+        </div>
+
+        <!-- Date selector -->
+        <div class="date-row">
+          <div class="date-info">
+            <div class="date-label">Logging for</div>
+            <div class="date-value" id="date-display-label">Today</div>
+          </div>
+          <div class="date-controls">
+            <input type="date" id="expense-date" class="date-input" />
+            <span class="backdated-pill" id="backdated-pill" style="display:none">⏪ Backdated</span>
+          </div>
+        </div>
+
+        <!-- Receipt-style entry card -->
+        <div class="receipt-card">
+          <div class="receipt-tape">
+            <div class="tape-holes">
+              <span></span><span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+          </div>
+          <div class="receipt-body">
+
+            <!-- Amount -->
+            <div class="amount-field" id="amount-field">
+              <span class="rupee-glyph">₹</span>
+              <input
+                type="number"
+                id="amount-input"
+                class="amount-input-el"
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+                inputmode="decimal"
+                autocomplete="off"
+              />
+            </div>
+
+            <!-- Description -->
+            <div class="field-group">
+              <label class="field-label">Description</label>
+              <input
+                type="text"
+                id="note-input"
+                class="field-input"
+                placeholder="What did you spend on?"
+                autocomplete="off"
+                maxlength="120"
+              />
+            </div>
+
+            <!-- Category -->
+            <div class="field-group">
+              <label class="field-label">Category</label>
+              <div class="cat-grid" id="cat-grid"></div>
+            </div>
+
+            <!-- Payment method & tag -->
+            <div class="two-col">
+              <div class="field-group">
+                <label class="field-label">Payment</label>
+                <select id="method-select" class="field-input field-select">
+                  <option value="UPI">📱 UPI</option>
+                  <option value="Card">💳 Card</option>
+                  <option value="Cash">💵 Cash</option>
+                  <option value="NetBanking">🏦 Net Banking</option>
+                  <option value="Wallet">👛 Wallet</option>
+                  <option value="EMI">🔄 EMI</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label class="field-label">Tag (optional)</label>
+                <input type="text" id="tag-input" class="field-input" placeholder="e.g. #vacation" maxlength="30" />
+              </div>
+            </div>
+
+            <!-- Submit -->
+            <button class="add-btn" id="add-btn">
+              <span class="add-btn-icon">✚</span>
+              <span>Add Expense</span>
+            </button>
+          </div>
+          <div class="receipt-bottom-tape">
+            <div class="tape-holes">
+              <span></span><span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick summary strip -->
+        <div class="quick-strip" id="quick-strip">
+          <div class="qs-item">
+            <span class="qs-val" id="qs-today">₹0</span>
+            <span class="qs-label">Today</span>
+          </div>
+          <div class="qs-divider"></div>
+          <div class="qs-item">
+            <span class="qs-val" id="qs-week">₹0</span>
+            <span class="qs-label">This Week</span>
+          </div>
+          <div class="qs-divider"></div>
+          <div class="qs-item">
+            <span class="qs-val" id="qs-month">₹0</span>
+            <span class="qs-label">This Month</span>
+          </div>
+          <div class="qs-divider"></div>
+          <div class="qs-item">
+            <span class="qs-val" id="qs-count">0</span>
+            <span class="qs-label">Total Txns</span>
+          </div>
+        </div>
+
+        <!-- Recent transactions -->
+        <div class="section-head">
+          <span class="section-heading">Recent Transactions</span>
+          <span class="section-count" id="recent-count">0 entries</span>
+        </div>
+        <div class="txn-list" id="add-txn-list"></div>
+      </section>
+
+      <!-- ─── PAGE: ANALYTICS ─── -->
+      <section class="page" id="page-analytics">
+        <div class="page-header">
+          <h1 class="page-title">Analytics <span class="title-emoji">📊</span></h1>
+          <p class="page-sub">Visualise where your money goes</p>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-bar" id="time-filter-bar">
+          <button class="filter-chip active" data-tf="all">All Time</button>
+          <button class="filter-chip" data-tf="today">Today</button>
+          <button class="filter-chip" data-tf="week">This Week</button>
+          <button class="filter-chip" data-tf="month">This Month</button>
+          <button class="filter-chip" data-tf="custom">📅 Custom</button>
+        </div>
+
+        <!-- Custom date range (hidden by default) -->
+        <div class="custom-range" id="custom-range" style="display:none">
+          <input type="date" id="range-from" class="field-input" />
+          <span style="color:var(--text3);font-size:13px;">to</span>
+          <input type="date" id="range-to" class="field-input" />
+          <button class="small-btn" id="apply-range-btn">Apply</button>
+        </div>
+
+        <!-- Category filter -->
+        <div class="filter-bar" id="cat-filter-bar" style="padding-top:0;margin-top:-4px;"></div>
+
+        <!-- Charts grid -->
+        <div class="charts-grid">
+          <div class="chart-card chart-card--wide">
+            <div class="chart-card-header">
+              <span class="chart-card-title">Daily Spending</span>
+              <span class="chart-card-badge" id="bar-badge">This Month</span>
+            </div>
+            <div class="chart-wrap h220"><canvas id="bar-chart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-header">
+              <span class="chart-card-title">By Category</span>
+              <span class="chart-card-badge">Distribution</span>
+            </div>
+            <div class="chart-wrap h220"><canvas id="pie-chart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-header">
+              <span class="chart-card-title">Payment Methods</span>
+              <span class="chart-card-badge">Mix</span>
+            </div>
+            <div class="chart-wrap h220"><canvas id="method-chart"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Transaction list with search -->
+        <div class="section-head" style="margin-top:8px;">
+          <span class="section-heading">Transactions</span>
+          <input type="text" id="txn-search" class="search-input" placeholder="🔍 Search…" />
+        </div>
+        <div class="txn-list" id="analytics-txn-list"></div>
+      </section>
+
+      <!-- ─── PAGE: DASHBOARD ─── -->
+      <section class="page" id="page-dashboard">
+        <div class="page-header">
+          <h1 class="page-title">Dashboard <span class="title-emoji">✨</span></h1>
+          <p class="page-sub">Your spending story at a glance</p>
+        </div>
+
+        <!-- Interval selector -->
+        <div class="interval-tabs" id="interval-tabs">
+          <button class="interval-tab active" data-interval="30">30 Days</button>
+          <button class="interval-tab" data-interval="180">6 Months</button>
+          <button class="interval-tab" data-interval="all">All Time</button>
+        </div>
+
+        <!-- Hero card -->
+        <div class="dash-hero" id="dash-hero">
+          <div class="dash-hero-bg"></div>
+          <div class="dash-hero-content">
+            <div class="dash-hero-period" id="dash-period">Last 30 days</div>
+            <div class="dash-hero-amount" id="dash-total">₹0</div>
+            <div class="dash-hero-row">
+              <div class="dash-micro">
+                <span class="dash-micro-val" id="dash-avg">₹0</span>
+                <span class="dash-micro-label">Daily avg</span>
+              </div>
+              <div class="dash-micro-sep"></div>
+              <div class="dash-micro">
+                <span class="dash-micro-val" id="dash-txns">0</span>
+                <span class="dash-micro-label">Transactions</span>
+              </div>
+              <div class="dash-micro-sep"></div>
+              <div class="dash-micro">
+                <span class="dash-micro-val" id="dash-max">₹0</span>
+                <span class="dash-micro-label">Peak day</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Trend chart -->
+        <div class="chart-card chart-card--wide" style="margin-bottom:14px;">
+          <div class="chart-card-header">
+            <span class="chart-card-title">Spending Trend</span>
+            <span class="chart-card-badge" id="dash-chart-badge">30 Days</span>
+          </div>
+          <div class="chart-wrap h200"><canvas id="dash-line-chart"></canvas></div>
+        </div>
+
+        <!-- Stats row -->
+        <div class="stats-row" id="stats-row">
+          <div class="stat-card">
+            <div class="stat-icon">📈</div>
+            <div class="stat-val" id="stat-highest-week">₹0</div>
+            <div class="stat-label">Best Week</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📉</div>
+            <div class="stat-val" id="stat-lowest-day">₹0</div>
+            <div class="stat-label">Lowest Day</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🏷️</div>
+            <div class="stat-val" id="stat-top-cat">—</div>
+            <div class="stat-label">Top Category</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">💳</div>
+            <div class="stat-val" id="stat-top-method">—</div>
+            <div class="stat-label">Fav. Payment</div>
+          </div>
+        </div>
+
+        <!-- Insights -->
+        <div class="section-head"><span class="section-heading">💡 Smart Insights</span></div>
+        <div id="insights-list"></div>
+
+        <!-- Category breakdown -->
+        <div class="chart-card chart-card--wide" style="margin-bottom:14px;">
+          <div class="chart-card-header">
+            <span class="chart-card-title">Category Breakdown</span>
+            <span class="chart-card-badge">With %</span>
+          </div>
+          <div id="cat-breakdown"></div>
+        </div>
+
+        <!-- Weekly heatmap -->
+        <div class="chart-card chart-card--wide" style="margin-bottom:14px;">
+          <div class="chart-card-header">
+            <span class="chart-card-title">Day-of-Week Pattern</span>
+            <span class="chart-card-badge">Avg spend</span>
+          </div>
+          <div class="chart-wrap h160"><canvas id="dow-chart"></canvas></div>
+        </div>
+
+      </section>
+
+      <!-- ─── PAGE: TRANSACTIONS ─── -->
+      <section class="page" id="page-transactions">
+        <div class="page-header">
+          <h1 class="page-title">Transactions <span class="title-emoji">📋</span></h1>
+          <p class="page-sub">Full ledger of every expense</p>
+        </div>
+
+        <!-- Search & filter bar -->
+        <div class="txn-toolbar">
+          <input type="text" id="ledger-search" class="search-input flex1" placeholder="🔍 Search transactions…" />
+          <select id="ledger-cat-filter" class="field-input field-select compact-select">
+            <option value="all">All Categories</option>
+          </select>
+          <select id="ledger-method-filter" class="field-input field-select compact-select">
+            <option value="all">All Methods</option>
+            <option value="UPI">UPI</option>
+            <option value="Card">Card</option>
+            <option value="Cash">Cash</option>
+            <option value="NetBanking">Net Banking</option>
+            <option value="Wallet">Wallet</option>
+            <option value="EMI">EMI</option>
+          </select>
+          <select id="ledger-sort" class="field-input field-select compact-select">
+            <option value="date-desc">Newest first</option>
+            <option value="date-asc">Oldest first</option>
+            <option value="amt-desc">Highest amount</option>
+            <option value="amt-asc">Lowest amount</option>
+          </select>
+        </div>
+
+        <div class="ledger-total-bar">
+          <span>Showing <strong id="ledger-count">0</strong> transactions</span>
+          <span>Total: <strong id="ledger-total">₹0</strong></span>
+        </div>
+
+        <div class="txn-list" id="ledger-txn-list"></div>
+      </section>
+
+    </main><!-- /main-content -->
+  </div><!-- /app -->
+
+  <!-- ═══════════════════════════════════════════
+       BOTTOM NAV (mobile)
+  ════════════════════════════════════════════ -->
+  <nav class="bottom-nav" id="bottom-nav">
+    <button class="bnav-item active" data-page="add">
+      <span class="bnav-icon">➕</span>
+      <span class="bnav-label">Add</span>
+    </button>
+    <button class="bnav-item" data-page="analytics">
+      <span class="bnav-icon">📊</span>
+      <span class="bnav-label">Analytics</span>
+    </button>
+    <button class="bnav-item" data-page="dashboard">
+      <span class="bnav-icon">🏠</span>
+      <span class="bnav-label">Dashboard</span>
+    </button>
+    <button class="bnav-item" data-page="transactions">
+      <span class="bnav-icon">📋</span>
+      <span class="bnav-label">Ledger</span>
+    </button>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════
+       MODALS
+  ════════════════════════════════════════════ -->
+
+  <!-- Admin Modal -->
+  <div class="modal-overlay" id="admin-overlay">
+    <div class="modal" id="admin-modal">
+      <button class="modal-close" id="admin-close-x">✕</button>
+
+      <!-- PIN screen -->
+      <div id="admin-pin-view">
+        <div class="modal-icon">🔐</div>
+        <h2 class="modal-title">Admin Mode</h2>
+        <p class="modal-sub">Enter your admin code to manage categories</p>
+        <div class="pin-row">
+          <input type="password" id="admin-pin" class="field-input pin-input" placeholder="••••••" inputmode="numeric" maxlength="8" />
+        </div>
+        <button class="add-btn" id="unlock-btn">Unlock Admin</button>
+        <p class="pin-hint">Hint: it's 6 digits 😉</p>
+      </div>
+
+      <!-- Admin panel -->
+      <div id="admin-panel-view" style="display:none">
+        <div class="modal-icon">⚙️</div>
+        <h2 class="modal-title">Manage Categories</h2>
+
+        <div class="admin-cats-grid" id="admin-cats-grid"></div>
+
+        <div class="add-cat-form">
+          <input type="text" id="new-emoji" class="field-input emoji-picker" placeholder="😀" maxlength="4" />
+          <input type="text" id="new-cat-name" class="field-input" placeholder="Category name" maxlength="20" />
+          <input type="color" id="new-cat-color" class="color-picker" value="#7C3AED" />
+          <button class="small-btn" id="add-cat-btn">+ Add</button>
+        </div>
+
+        <div class="admin-divider"></div>
+        <button class="danger-btn" id="reset-cats-btn">⚠️ Reset to Default Categories</button>
+        <button class="danger-btn" id="clear-data-btn" style="margin-top:8px;">🗑️ Clear All Transactions</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Transaction Modal -->
+  <div class="modal-overlay" id="edit-overlay">
+    <div class="modal" id="edit-modal">
+      <button class="modal-close" id="edit-close-x">✕</button>
+      <div class="modal-icon">✏️</div>
+      <h2 class="modal-title">Edit Transaction</h2>
+      <input type="hidden" id="edit-txn-id" />
+      <div class="field-group">
+        <label class="field-label">Amount (₹)</label>
+        <input type="number" id="edit-amount" class="field-input" />
+      </div>
+      <div class="field-group">
+        <label class="field-label">Description</label>
+        <input type="text" id="edit-note" class="field-input" />
+      </div>
+      <div class="field-group">
+        <label class="field-label">Date</label>
+        <input type="date" id="edit-date" class="field-input" />
+      </div>
+      <div class="field-group">
+        <label class="field-label">Category</label>
+        <select id="edit-cat" class="field-input field-select"></select>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Payment Method</label>
+        <select id="edit-method" class="field-input field-select">
+          <option value="UPI">📱 UPI</option>
+          <option value="Card">💳 Card</option>
+          <option value="Cash">💵 Cash</option>
+          <option value="NetBanking">🏦 Net Banking</option>
+          <option value="Wallet">👛 Wallet</option>
+          <option value="EMI">🔄 EMI</option>
+        </select>
+      </div>
+      <button class="add-btn" id="save-edit-btn">Save Changes</button>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Confirm Dialog -->
+  <div class="modal-overlay" id="confirm-overlay">
+    <div class="modal confirm-modal" id="confirm-modal">
+      <div class="modal-icon" id="confirm-icon">⚠️</div>
+      <h2 class="modal-title" id="confirm-title">Are you sure?</h2>
+      <p class="modal-sub" id="confirm-msg"></p>
+      <div class="confirm-actions">
+        <button class="cancel-btn" id="confirm-cancel">Cancel</button>
+        <button class="danger-btn" id="confirm-ok">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main JS -->
+  <script src="js/data.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/pdf.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
